@@ -1,0 +1,141 @@
+
+
+
+Features:
+==============================
+
+
+
+• SMD LED Binary Display: 
+  ∅ ∅ ∅ ∅ ∅ 
+∅ ∅ ∅ ∅ ∅ ∅
+∅ ∅ ∅ ∅ ∅ ∅ 
+
+#   #   #   #  
+
+  r g g g g g
+  y y y y y y
+o o o o o o o
+
+• μC mit 32 I/O
+• Powered by 2 Batteries or USB 
+	Falls eine Batterie leer ist, kann sie gewechselt werden.
+	LED Anzeige, ob eine Batterie leer ist + alive Anzeige
+
+• Temperature Display
+• Datum, Sommerzeit, Winterzeit und Schaltjahre
+• Synchronisierung mit DCF77: Keine PCB Antenne möglich
+• Wecker + Summer? + Wecker Pin für Relays
+• Ausgang für externe Referenz/Oszillator
+• Textanzeige durch 3px Höhe schnell hintereinander
+
+Absolute Maximum Ratings:
+==============================
+Vin:	1.8 – 5.5V
+Imax:	60mA	
+
+
+
+Stromverbraucher im Active-BAT-Mode
+-----------------------------------
+MCU	6mA
+LED	42mA
+
+
+
+Stromverbraucher im Sleep-BAT-Mode
+----------------------------------
+MCU	2μA
+Quarz	1μA
+LinReg	1μA
+BuckReg	1μA	
+
+Schätzung: 1 Jahr Laufzeit mit 200mA 3.0V LithiumBatterie bei 20μA Aufnahme
+
+
+Modi:
+==============================
+• Kontinuierliche Anzeige falls über USB gepowered.
+• Anzeige auf Knopfdruck, falls über Batterie betrieben.
+
+• Uhrzeit, Datum, Tag/Temp/Druck, Wecker/Timer, Stopuhr, Batterie/DCF77
+
+
+
+Umsetzung:
+===============================
+
+Versorgung: 	– Direkt aus Batterie mit 3V3 -> 2.4mW/LED Verlust in Serienwiderständen
+		– Mit Linearregler: auch 2.4mW/LED Verlust (1.2 Drop * 2mA)
+
+• Logiklevel 1.8 Volt:
+	– Atmega startet nur mit < 4MHz -> Fuse Prescaler für Quarz
+	– Leiterbahnen möglichst kurz
+
+• 1s sleep, taster an interrupt
+
+• Batterie CR2032 mit 210mAh
+	Bei 2mA/LED * 15 = 30mA*10sek ~ 2000 mal Uhrzeit anzeigen
+	Sonst: crystal: 30μA; Angenommen 100μA gesamt => 3 Monate 
+
+• Input/Output:	21 LEDs + 2 Temp + 1 Light + 1 Buzzer + 4 Buttons +1 Batterie = 32
+
+• LEDs
+	– 7 + 7 + 7 Leds = 21 LED 
+	– 2mA low-current LEDs (green, orange, yellow)
+	– Ansteuerung über PWM-fähige, serielle Schieberegister
+
+• Alarm:
+	– loud buzzer
+	– snooze function
+	– led indicator 
+
+• Microcontroller:
+
+Name				Sleep		Input	
+--------------------------------------------------------------------	
+ATXMEGA16A4U-AU	34 I/O				1.6 - 3.6V	3.95€	
+LPC1113 CORTEX M0,48LQFP 	6μA, 220nA	1.8 - 3.6V	1.67€
+MKL05Z32VLF4			1.6μA		1.71 - 3.6V	1.51€
+ATSAMD20J14			2.5μA		1.62 - 3.6V	2.40€
+STM32F101R6T6A			1.4μA		2.0 - 3.6V 	1.68€
+
+
+• LY L29K
+
+• Temperaturmesser für Frequenzabweichung: Messung alle 30 sek
+• Zwei Quarze für Compensation
+
+Bauteile:
+=============================
+
+
+• Regulator: Linear oder Buck?
+
+Name		Quiescent	DropOut			Input
+--------------------------------------------------------------------
+MCP1702 	2μA, 		0.25V @ 100mA		2.7 – 13.2		
+AS1375 		1μA, 		0.12V @ 200mA		2.7 – 5.5		1$ @ DigiKey		
+LP2985 		< 1μA, 		0.12V @ 50mA		2.2 – 16 		0.48€ @ Mouser (6 Wochen)
+TPS782		0.5μA		0.09V @ 100mA		2.2 – 5.5		0.55€ @ Mouser
+
+Bei LDOs müssen die Kondensatorwerte stimmen!!!
+
+• Buck regulators:
+	– Von TI: TPS62xxx	TPS62736 oder TPS62120
+	– Von LT: LTC3549
+
+
+• Quarz: 
+	32,768 MS1V-10, 
+	TXC - 7M-16.000MEEQ-T		1.27€ @ farnell
+
+
+• Temperatur: LM334, LM335, KTY 82-210, LMT85!!
+• Umgebungslicht: SFH 203, BP 104 FS, BPW 34
+
+
+https://www.mikrocontroller.net/articles/AVR_-_Die_genaue_Sekunde_/_RTC
+https://www.mikrocontroller.net/articles/DCF77-Funkwecker_mit_AVR
+
+

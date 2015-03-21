@@ -1,20 +1,16 @@
-smartbinaryclock
-================
-
+# smartbinaryclock
 binary clock with several sensors
 
 
 
-## Features:
-================
+### Features:
 * hour, minute, second
 * day, month, year
 * alarm clock
 
 
 
-## Sensors:
-===========
+### Sensors:
 * temperature
 * brightness
 * (barometer)
