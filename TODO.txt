@@ -1,0 +1,36 @@
+
+
+
+Todo:
+==========================================
+• Create Dropbox Folder			X
+• Freeze Feature List
+• Power Supply Design
+• EAGLE Lib for APDS-9005
+• (EAGLE Lib for LMT85)
+• Oszi: Button with Low-Pass in series
+
+
+
+Hardware:
+==========================================
+• order components
+• find board manufacture
+• manufacture board
+• assemble board
+• check & debug board
+• crystal calibration
+
+
+
+
+Software:
+==========================================
+• Create GitHub Repo			X
+• GPIO init
+• power management
+• date and calendar with leap years
+• dimm LEDs with PWM
+• temperature measurement
+• light measurement
+• timer calibration
