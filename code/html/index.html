@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous"> -->
+  <title>BinaryClock</title>
+<style type="text/css">
+  
+html { font-family: sans-serif; }
+body { margin: 0; padding: 1rem 0.5rem 0 0.5rem; }
+
+/*.button{ 
+  display: inline-block;
+  color: #000;
+  font-style: thick;
+  background-color: #E6E6E6;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  padding: .8rem 1rem; 
+}*/
+button { padding: .7rem 1rem; cursor: pointer; border: none; }
+.active { background-color: rgb(64,196,255); }
+header, main, footer, .container{ margin: auto; max-width: 960px; }
+footer {padding-top: 3rem;}
+
+</style>
+</head>
+<body>
+  <header>
+    <h1>BinaryClock Web Interface</h1>
+  </header>
+  <main>
+  <p>Welcome to the BinaryClock Web Interface. Here you can adjust the look and feel of my incredible awesome clock!</p>
+  <p>Boot Time: {{ boottime }}</p>
+
+  <h2>Display Settings</h2>
+  <p>
+    <a href="/minutes"><button>Show Minutes</button></a> <a href="/seconds"><button>Show Seconds</button></a> <a href="/date"><button>Show Date</button></a>
+  </p>
+  <p>
+    <a href="/on"><button>On</button></a> <a href="/off"><button>Off</button></a> <a href="/dimm"><button>Dimm</button></a> <a href="/bright"><button>Bright</button></a> <a href="/fullbright"><button>FullBright</button></a>
+  </p>
+  <p>
+  Set Color: <input type="text" name="color">
+  </p>
+
+  <h2>Command Log</h2>
+  {{ commandlog }}
+
+  </main>
+  <footer>
+    <small>2018, Emanuel Regnath, <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#x6f;&#58;&#101;&#109;&#97;&#110;&#117;&#101;&#x6c;&#x2e;&#114;&#x65;&#103;&#110;&#97;&#116;&#104;&#x40;&#116;&#x75;&#109;&#46;&#x64;&#101;">Email</a></small>
+  </footer>
+</body>
+
+
+<!-- Javascript here -->
+<script>
+    // base64 encode your email address
+    function decryptEmail(encoded) { var address = atob(encoded); window.location.href = "mailto:" + address; }     
+</script>
+
+
+</html>

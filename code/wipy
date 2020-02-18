@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+# Small script to interact with Pycom WiPys
+# Author: Emanuel Regnath (emanuel.regnath@tum.de)
+
+
+ALLFILES=("main.py" "lib/td.py" "td.json")
+
+
+ID_FILE=".ids_for_wipys.tmp"
+WIPY_DEVS=()
+WIPY_NAMES=()
+
+
+
+# functions
+# --------------------------------------------------
+function usage () {
+	echo "Help for $0 Version 1.0.
+
+## Identify/Communicate
+
+  $0 id         # identifies connected WiPys
+
+  $0 repl       # opens REPL to all WiPys
+
+
+## Read / Write WiPys
+
+  $0 [-d DEVNUMS] ls|put|rm|mkdir FILENAMES
+
+  Examples:
+  $0 -d 12 rm main.py    # remove main.py from devices 1 and 2
+  $0 put lib/led.py      # write lib/led.py to all devices"
+	exit 0
+}
+
+
+
+function probe_devices() ## Check if wipys are connected
+{
+	# echo -e "Listing connected USB devices...\n"
+	BASE_PORTS=("/dev/ttyACM*" "/dev/ttyUSB*")
+	for BASE_PORT in "${BASE_PORTS[@]}"; do
+		for USB_PORT in $(\ls ${BASE_PORT} 2>/dev/null); do
+			WIPY_DEVS+=("$USB_PORT")
+		done
+	done
+
+	if [ ! -f "${ID_FILE}" ] || [ $(stat --printf="%s" ${ID_FILE}) -ge 3000 ]; then
+		echo "ID-File '${ID_FILE}'  missing / broken."
+		identify_devices
+		return
+	fi
+	# read first two lines
+	exec 6< ${ID_FILE}
+	IFS=', ' read -r -a F_WIPY_DEVS <&6
+	IFS=', ' read -r -a WIPY_NAMES <&6
+	exec 6<&-
+
+	if [ ${#WIPY_DEVS[@]} -eq 0 ]; then
+		echo "No USB devices found. Please check cables and dmesg"
+		exit 0
+	fi
+	if [ ${#F_WIPY_DEVS[@]} -ne ${#WIPY_DEVS[@]} ]; then
+		echo "Device number mismatch. Regenerating ID-File"
+		identify_devices
+		return
+	fi
+
+	echo -e "From ID-File (run $0 id to update):\n"
+	for i in "${!WIPY_DEVS[@]}"; do
+		echo "  ${i}. WiPy \"${WIPY_NAMES[$i]}\" at ${WIPY_DEVS[$i]}"
+	done
+	echo ""
+}
+
+
+# | sed 's/.*"name": "\(.*?\)",/\1/p'
+function identify_devices(){
+	rm -f ${ID_FILE}
+	WIPY_NAMES=()
+	echo -e "import td\nif td.init(): print(td.get(\"title\"));\n" > .id_script.py
+	echo -e "Creating new ID-File...\n"
+	for i in "${!WIPY_DEVS[@]}"; do
+		name=$(ampy -p "${WIPY_DEVS[$i]}" "run" ".id_script.py" 2>&1)
+		name=${name//[$'\t\r\n ']}
+		if [[ "${name}" =~ ^[A-Za-z]+$  ]]; then
+			echo "  ${i}. WiPy \"${name}\" at ${WIPY_DEVS[$i]}"
+			WIPY_NAMES+=("$name")
+		elif [[ "$name" =~ "Failed to find"|"PyboardError" ]]; then
+			echo "  ${i}. Unnamed WiPy-${i} at ${WIPY_DEVS[$i]}"
+			WIPY_NAMES+=("WiPy-${i}")
+		else
+			WIPY_NAMES+=("Unknown USB Device")
+			echo "  X. Unknown USB at ${WIPY_DEVS[$i]}"
+		fi
+	done
+	echo ""
+	rm .id_script.py
+	echo "${WIPY_DEVS[@]}" > ${ID_FILE}
+	echo "${WIPY_NAMES[@]}" >> ${ID_FILE}
+}
+
+
+
+# function create_dirs() {
+# 	dirs=( $(echo "$(dirname ${ALLFILES[@]})" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+# 	dirs=( $(echo ${dirs[*]/.} ) )
+# 	for dir in "${dirs[@]}"; do
+# 		echo "* created dir /flash/$dir"
+# 		ampy -p ${WIPY_DEV} mkdir ${dir}
+# 	done
+# }
+
+
+
+function exec_ampy() {
+	cmd=${1}; shift
+	devnums=${!1}
+	pyfiles=${!2}
+
+	[[ $cmd != "ls" ]] && echo "Running $cmd for files: ${pyfiles[@]} on ${#devnums[@]} devices:"
+
+
+	for idx in "${devnums[@]}"; do
+		echo -e "\nOutput for ${WIPY_DEVS[$idx]}:\n------------------------------"
+		for pyfile in "${pyfiles[@]}"; do
+			case $cmd in
+				ls) ampy -p "${WIPY_DEVS[$idx]}" ls -r -l; break;;
+				reset) ampy -p "${WIPY_DEVS[$idx]}" reset;;
+				put) out=$(ampy -p ${WIPY_DEVS[$idx]} $cmd $pyfile /flash/$pyfile 2>&1);;
+				*) out=$(ampy -p ${WIPY_DEVS[$idx]} $cmd $pyfile 2>&1);;
+			esac
+
+			[[ $out =~ "failed to access /dev/" ]] && echo "ERROR Cannot access ${WIPY_DEV}. Port busy? (e.g. serial monitor)" && return
+			# raise PyboardError('could not enter raw repl')
+			[[ $out =~ "OSError: [Errno 2] ENOENT" ]] && echo "WARN Path $pyfile does not exist on WiPy. Run $0 mkdir" && continue
+			[[ $out =~ "OSError: error removing file" ]] && echo "WARN $pyfile did not exist." && continue
+			[[ $out =~ [A-Za-z] ]] && echo "Out:$out|" && return  # print unknown
+
+			case $cmd in
+				"put") echo "* wrote /flash/$pyfile";;
+				"rm"|"rmdir") echo "* removed /flash/$pyfile";;
+				"mkdir")  echo "* created /flash/$pyfile";;
+				*) echo "unknown command: $cmd";;
+			esac
+		done
+	done
+}
+
+
+function start_repl(){
+	for i in "${devnums[@]}"; do
+		# Check if screen version is higher or equal to 4.06 to specify a logfile as option parameter
+		if [[ $(screen --version | awk '$3>=4.06 {print 0}') = 0 ]]; then
+			gnome-terminal -- bash -c "echo -e \"\e]2;${WIPY_NAMES[$i]}\a\";screen -L -Logfile logs/${WIPY_NAMES[$i]}.log -S ${WIPY_NAMES[$i]} ${WIPY_DEVS[$i]} 115200,echo"
+		else
+			gnome-terminal -- bash -c "echo -e \"\e]2;${WIPY_NAMES[$i]}\a\";screen -S ${WIPY_NAMES[$i]} ${WIPY_DEVS[$i]} 115200,echo"
+		fi
+	done
+	echo -e "Opening REPL input to all devices ('q' or Ctrl+C to quit)"
+	REPLY=""
+	trap end_repl 2
+	while true; do
+		read -p ">>> " -r
+		if [[ $REPLY =~ ^[qQ]$ ]]; then
+		    end_repl
+		else
+			for i in "${!WIPY_DEVS[@]}"; do
+				screen -S ${WIPY_NAMES[$i]} -X stuff "${REPLY}\015"
+			done
+		fi
+	done
+}
+
+
+function end_repl(){
+	echo -e "\nClosing all connections. Bye."
+	killall -SIGTERM screen
+	exit 0
+}
+
+
+
+
+
+# ===============================================================
+
+
+# default params
+devnums="all"
+pyfiles=()
+empty=()
+cmd="none"
+
+
+# process command line arguments like a boss
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	case $key in
+		-d|--devices) devnums=$2;shift;shift;;
+		-h|--help) usage; exit 0;;
+		id|put|get|rm|rmdir|mkdir|ls|reset|repl) cmd=$key;shift;;
+		*) pyfiles+=("$1");shift;;
+	esac
+done
+
+# get devices
+probe_devices
+
+
+# set files to read/write (if any)
+[[ ${#pyfiles[@]} -eq 0 ]] && pyfiles=( "${ALLFILES[@]}" )
+
+# set devices
+if [[ "$devnums" == "all" ]]; then
+	devnums=($(seq 0 1 $((${#WIPY_DEVS[@]}-1))))
+else
+	read -a devnums <<< $(echo "$devnums" | sed 's/./& /g')
+fi
+
+
+#
+case $cmd in
+	repl) start_repl;;
+	id) identify_devices;;
+	ls) exec_ampy "ls" devnums empty;;
+	reset) exec_ampy "reset" devnums empty;;
+	put|rm|mkdir|rmdir) exec_ampy "$cmd" devnums pyfiles;;
+	#rm) exec_ampy "rm" devnums pyfiles;;
+	#mkdir) exec_ampy "mkdir" devnums pyfiles;;  # create_dirs;;
+	get) ampy -p ${WIPY_DEVS[$devnums]} get $pyfiles;;
+    "none") echo "No command. Try $0 --help";;
+	*) usage;;
+esac
+
+
+
+# exit with error code
+exit 0
