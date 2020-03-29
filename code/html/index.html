@@ -33,7 +33,6 @@ footer {padding-top: 3rem;}
   </header>
   <main>
   <p>Welcome to the BinaryClock Web Interface. Here you can adjust the look and feel of my incredible awesome clock!</p>
-  <p>Boot Time: {{ boottime }}</p>
 
   <h2>Display Settings</h2>
   <p>
@@ -46,6 +45,17 @@ footer {padding-top: 3rem;}
   Set Color: <input type="text" name="color">
   </p>
 
+
+  <h2>Internal States</h2>
+  <ul>
+    <li>Boot Time: {{ boottime }}</li>
+    <li>UTC time: {{ utctime }}</li>
+    <li>Local time: {{ localtime }}</li>
+    <li>Timezone: {{ timezone }}</li>
+    <li>Is Summertime: {{ summertime }}</li>
+    <li>Is RTC synced: {{ rtcsynced }}</li>
+  </ul>
+  
   <h2>Command Log</h2>
   {{ commandlog }}
 

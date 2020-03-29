@@ -48,7 +48,7 @@ def weekday(date):
 
 
 
-def summertime(datetime):
+def is_summertime(datetime):
     month = datetime[1]
     day = datetime[2]
     wday = (weekday(datetime) + 1) % 7  # make sunday wday = 0
@@ -77,7 +77,6 @@ class Clock:
         self.inteval = 0
         self.timezone = 1
         self.summertime = 1
-        self.rtcdate = (2018, 8, 1)
         self.auto_sync = False
 
     def register_heartbeat_handler(self, handler, inteval=1.0):
@@ -97,21 +96,23 @@ class Clock:
 
 
     def date(self):
-        self.rtcdate = self.rtc.now()[0:3]
-        return self.rtcdate
+        return self.rtc.now()[0:3]
 
 
     def time(self):
-        """ returns seconds since 1970-1-1 0:00 """
-        # return time.mktime( localtime() )
+        """ returns localtime seconds since 1970-1-1 0:00 """
         return time.time()
 
 
     def localtime(self):
-        """ returns localtime struct """
+        """ returns localtime struct (HH, MM, SS)"""
         return self.rtc.now()[3:6]
+
+
+    def utctime(self):
+        """ returns UTC struct (HH, MM, SS)"""
         rtctime = list(self.rtc.now()[3:6])
-        rtctime[0] += (self.timezone + self.summertime)
+        rtctime[0] = (rtctime[0] - (self.timezone + self.summertime)) % 24
         return tuple(rtctime)
 
 
@@ -120,7 +121,7 @@ class Clock:
 
 
     def is_summertime(self):
-        return self.summertime
+        return self.summertime == 1
 
 
     def enable_auto_sync(self, period_s=3600):
@@ -132,16 +133,14 @@ class Clock:
 
     def sync(self):
         secs = ntp.ntptime()
-        gmtime = time.localtime(secs)
-        gmtime = gmtime[0:6] + (0, self.timezone)
-        # check summer time
-        date = gmtime[0:3]
-        self.summertime = summertime( gmtime )
-        hour = gmtime[3] + self.timezone + self.summertime
-        ltime = gmtime[0:3] + (hour, ) + gmtime[4:6] + (0, 0)
+        utctime = time.localtime(secs)
+        utctime = utctime[0:6] + (0, self.timezone)
+        ltime = time.localtime(secs + 3600*(self.timezone))  
+        self.summertime = int(is_summertime( ltime ))   # check summer time
+        ltime = time.localtime(secs + 3600*(self.timezone + self.summertime))  
 
         self.rtc.init(ltime)
-        print("Clock: gmtime: ", gmtime)
+        print("Clock: utctime: ", utctime)
         print("Clock: localtime: ", ltime)    
 
 
@@ -159,4 +158,4 @@ def to24hformat(time):
 
 
 
-print(summertime([2019, 10, 27, 11, 38, 00]))
+# print(is_summertime([2020, 3, 29, 1, 38, 00]))

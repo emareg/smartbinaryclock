@@ -162,13 +162,6 @@ class BinaryClockApp:
                 self.display.set_row( 1, curtime[1], self.timecolors[1] )
 
 
-            # elif self.state == STATE_BOOTDATE:
-            #     bootdate = list(self.bootdatetime[0:3])
-            #     bootdate[0] = bootdate[0] % 100 # year in 100s
-            #     bootdate = tuple(bootdate[1:])
-            #     self.display.set_rows( bootdate, self.datecolors)
-
-
             elif self.state == STATE_DATE:
                 curdate = list(self.clock.date())
                 curdate[0] = curdate[0] % 100 # year in 100s
@@ -250,7 +243,6 @@ class BinaryClockApp:
         if ipbytes[3] > 100: ipbytes[3] -= 100
 
         # display ip
-        #self.display.set_row( 0, ipbytes[0], self.ipcolor )
         self.display.set_row( 0, ipbytes[2], self.ipcolor )
         self.display.set_row( 1, ipbytes[3], self.ipcolor )
         self.display.show()
@@ -273,8 +265,15 @@ class BinaryClockApp:
         for enry in logs:
             html_log += "<li>"+str(enry)+"</li>"
         html_log += "</ul>"
-        html = self.html.replace("{{ commandlog }}", html_log)
+        html = self.html
+        html = html.replace("{{ commandlog }}", html_log)
+        html = html.replace("{{ utctime }}", str(self.clock.utctime()))
+        html = html.replace("{{ localtime }}", str(self.clock.localtime()))
+        html = html.replace("{{ timezone }}", str(self.clock.timezone))
+        html = html.replace("{{ summertime }}", str(self.clock.summertime))
+        html = html.replace("{{ rtcsynced }}", str(self.clock.synced()))
         return html
+
 
 
 

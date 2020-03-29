@@ -133,7 +133,7 @@ function exec_ampy() {
 			esac
 
 			[[ $out =~ "failed to access /dev/" ]] && echo "ERROR Cannot access ${WIPY_DEV}. Port busy? (e.g. serial monitor)" && return
-			# raise PyboardError('could not enter raw repl')
+			[[ $out =~ "raise PyboardError('could not enter raw repl')" ]] && echo "Out:$out|" && echo "ERROR WiPy seems busy. Try to reset and press S1 for booting to console." && return
 			[[ $out =~ "OSError: [Errno 2] ENOENT" ]] && echo "WARN Path $pyfile does not exist on WiPy. Run $0 mkdir" && continue
 			[[ $out =~ "OSError: error removing file" ]] && echo "WARN $pyfile did not exist." && continue
 			[[ $out =~ [A-Za-z] ]] && echo "Out:$out|" && return  # print unknown

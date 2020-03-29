@@ -1,5 +1,4 @@
-# binary clock module
-
+# binary clock display module
 
 from lib.ws2801 import WS2801
 import time
@@ -70,7 +69,6 @@ class LedDisplay:
 
 
     def set_pixel(self, idx, color):
-        #color.brightness( self.brightness )
         self.pixels[idx] = color.to_int( self.brightness )
 
     def set_buf(self, colors):
@@ -136,7 +134,6 @@ class LedDisplay:
 
     def set_brightness(self, val):
         self.brightness = val
-        #self.pixels.brightness = val
 
 
     def test(self):
@@ -162,7 +159,8 @@ class LedDisplay:
         self.test()
 
 
- 
+
+# Writing text idea: 
 #   •    •    •••  •••   ••••  •••  •••   •  •    •      •   • ••   •     •• ••  ••  •  ••••  •••  •••  •••   •••   •••••   •  •  •   •  •   •  •• ••  •• ••  •••••
 #  •••   •••  •    • ••  •••   ••   •  •  ••••    •    • •   •••    •     • • •  • • •  •  •  •••  •••  •••   ••••    •     •  •   • •   • • •    •      •      ••
 # •   •  •••  •••  •••   ••••  •    ••••  •  •   •••   •••   • ••   •••   •   •  •  ••  ••••  •      •  •  •   •••    •     ••••    •     • •   •• ••    •     ••••
